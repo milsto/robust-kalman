@@ -1,20 +1,6 @@
 import numpy as np
 from scipy.optimize import minimize
-
-
-
-class HuberScore:
-    def __init__(self, delta=1.5):
-        self._delta = delta
-
-    def evaluate(self, z):
-        if abs(z) >= self._delta:
-            return self._delta * abs(z) - pow(self._delta, 2) / 2.0
-        else:
-            return pow(z, 2) / 2.0
-
-    def derivative(self, z):
-        raise NotImplemented
+from utils import HuberScore
 
 
 class RobustKalman():

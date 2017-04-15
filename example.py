@@ -2,7 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 
-from robust_kalman import RobustKalman, HuberScore
+from robust_kalman import RobustKalman
+from utils import HuberScore, VariablesHistory, WindowStatisticsEstimator
 
 np.random.seed(256)
 
@@ -23,37 +24,6 @@ matplotlib.rcParams.update(params)
 # hv = np.vectorize(h.evaluate)
 # plt.plot(t, hv(t))
 # plt.show()
-
-
-class VariablesHistory:
-    def __init__(self):
-        self._variables_history = dict()
-
-    def __getitem__(self, item):
-        return self._variables_history[item]
-
-    def update(self, variable_name, value):
-        if variable_name not in self._variables_history:
-            self._variables_history[variable_name] = list()
-
-        self._variables_history[variable_name].append(value)
-
-
-class WindowStatisticsEstimator:
-    def __init__(self, win_size=25):
-        self._win_size = win_size
-        self._buffer = np.zeros((self._win_size,), np.float32)
-        self._head = 0
-
-    def update(self, value):
-        self._buffer[self._head] = value
-        self._head = (self._head + 1) % self._win_size
-
-    def mean(self):
-        return np.mean(self._buffer)
-
-    def variance(self):
-        return np.var(self._buffer)
 
 # Example 1
 # dt = 0.01
