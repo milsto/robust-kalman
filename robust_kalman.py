@@ -17,7 +17,7 @@ class RobustKalman():
             R0: (Initial) observation noise covariance
         """
         self.F = F.copy()
-        self.B = B.copy()
+        self.B = B.copy() if B is not None else None
         self.H = H.copy()
         self.x = x0.copy()
         self.P = P0.copy()

@@ -57,9 +57,9 @@ PLOT_ADAPTIVE_CEE = False
 Q0 = np.matmul(G, G.T) * sigma_process**2
 R0 = np.eye(1, dtype=np.float32) * sigma_measure**2
 
-kalman_linear = RobustKalman(F, [0], H, x0_kalman, P0, Q0, R0, use_robust_estimation=False, G=G, use_robust_statistics=False)
-kalman_robust = RobustKalman(F, [0], H, x0_kalman, P0, Q0, R0, use_robust_estimation=True, G=G, use_robust_statistics=False)
-kalman_robust_stat = RobustKalman(F, [0], H, x0_kalman, P0, Q0, R0, use_robust_estimation=True, G=G, use_robust_statistics=True)
+kalman_linear = RobustKalman(F, None, H, x0_kalman, P0, Q0, R0, use_robust_estimation=False, G=G, use_robust_statistics=False)
+kalman_robust = RobustKalman(F, None, H, x0_kalman, P0, Q0, R0, use_robust_estimation=True, G=G, use_robust_statistics=False)
+kalman_robust_stat = RobustKalman(F, None, H, x0_kalman, P0, Q0, R0, use_robust_estimation=True, G=G, use_robust_statistics=True)
 
 wstat_q = WindowStatisticsEstimator(win_size=25)
 wstat_r = WindowStatisticsEstimator(win_size=25)
