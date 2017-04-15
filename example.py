@@ -76,9 +76,12 @@ G = np.array([[0.5 * dt**2, dt]], np.float32).T
 H = np.array([[1, 0]], np.float32)
 x0 = np.array([[0.01, 0.01]], np.float32).T
 P0 = np.ones((2, 2), np.float32) * 0.001
-sigma_process = 6.0
+sigma_process = 10.0
 sigma_measure = 0.1
 x0_kalman = np.array([[0, 0]], np.float32).T
+
+IS_SPIKE_EXPERIMENT = True
+PLOT_ADAPTIVE_CEE = False
 
 
 Q0 = np.matmul(G, G.T) * sigma_process**2
@@ -119,9 +122,11 @@ for t in t_axis:
     history.update('r_var_est', kalman_robust_stat.r_var_est)
 
     q = np.random.normal(0.0, sigma_process, size=(1, 1))
-    r = 0.85 * np.random.normal(0.0, sigma_measure, size=(1, 1)) + 0.15 * np.random.normal(0.0, 5.0, size=(1, 1))
-    #rare_event = 1 if np.random.uniform(0, 1.0) > 0.9 else 0
-    #r = np.random.normal(0.0, sigma_measure, size=(1, 1)) + np.random.choice([-1.0, 1.0]) * np.random.uniform(1.0, 2.0) * rare_event #+ 0.15 * np.random.normal(0.0, 5.0, size=(1, 1))
+    if not IS_SPIKE_EXPERIMENT:
+        r = 0.85 * np.random.normal(0.0, sigma_measure, size=(1, 1)) + 0.15 * np.random.normal(0.0, 5.0, size=(1, 1))
+    else:
+        rare_event = 1 if np.random.uniform(0, 1.0) > 0.9 else 0
+        r = np.random.normal(0.0, sigma_measure, size=(1, 1)) + np.random.choice([-1.0, 1.0]) * np.random.uniform(1.0, 1.5) * rare_event #+ 0.15 * np.random.normal(0.0, 5.0, size=(1, 1))
 
     wstat_q.update(q)
     wstat_r.update(r)
@@ -142,45 +147,101 @@ for t in t_axis:
 
     step += 1
 
-plt.figure()
-plt.plot(t_axis, [x[0, 0] for x in history['x']], 'g', label='x_0')
-
-plt.plot(t_axis, [z[0, 0] for z in history['z']], 'b', linewidth=0.5, label='z_0')
-
-plt.plot(t_axis, [k[0, 0] for k in history['x_kalman']], 'r', label='\hat{x}^{kalman}_0')
-
-plt.plot(t_axis, [k[0, 0] for k in history['x_kalman_robust']], 'k', label='$\hat{x}^{robust kalman}_0$')
+plt.figure(figsize=[15/2.54, 10/2.54])
+plt.plot(t_axis, [x[0, 0] for x in history['x']], 'g', label='$x_0\ (true\ state)$')
+plt.plot(t_axis, [z[0, 0] for z in history['z']], 'b', linewidth=0.5, label='$z_0\ (measurement)$')
+plt.plot(t_axis, [k[0, 0] for k in history['x_kalman']], 'm', label='$\hat{x}^{Kalman}_0$')
+plt.plot(t_axis, [k[0, 0] for k in history['x_kalman_robust']], 'r', label='$\hat{x}^{robust\ Kalman}_0$')
+plt.xlabel(r'$t [\mathrm{s}]$')
+plt.ylabel(r'$x_0 [\mathrm{m}]$')
+plt.axis('tight')
+ax = plt.gca()
+ax.spines['right'].set_color('none')
+ax.spines['top'].set_color('none')
+ax.xaxis.set_ticks_position('bottom')
+ax.yaxis.set_ticks_position('left')
 plt.legend()
+if IS_SPIKE_EXPERIMENT:
+    plt.savefig('x0_spike_outliers.pdf')
+else:
+    plt.savefig('x0_normal_outliers.pdf')
 
 
-plt.figure()
-plt.plot(t_axis, [x[1, 0] for x in history['x']], 'g', label='x0')
-
-#plt.plot(t_axis, [z[0, 0] for z in history['z']], 'b', label='z0')
-
-plt.plot(t_axis, [k[1, 0] for k in history['x_kalman']], 'r', label='x est')
-
-plt.plot(t_axis, [k[1, 0] for k in history['x_kalman_robust']], 'k', label='x est robust')
-
+plt.figure(figsize=[15/2.54, 10/2.54])
+plt.plot(t_axis, [x[1, 0] for x in history['x']], 'g', label='$x_1$')
+plt.plot(t_axis, [k[1, 0] for k in history['x_kalman']], 'm', label='$\hat{x}^{Kalman}_1$')
+plt.plot(t_axis, [k[1, 0] for k in history['x_kalman_robust']], 'r', label='$\hat{x}^{robust\ Kalman}_1$')
+plt.xlabel(r'$t [\mathrm{s}]$')
+plt.ylabel(r'$x_1 [\mathrm{m/s}]$')
+plt.axis('tight')
+ax = plt.gca()
+ax.spines['right'].set_color('none')
+ax.spines['top'].set_color('none')
+ax.xaxis.set_ticks_position('bottom')
+ax.yaxis.set_ticks_position('left')
 plt.legend()
+if IS_SPIKE_EXPERIMENT:
+    plt.savefig('x1_spike_outliers.pdf')
+else:
+    plt.savefig('x1_normal_outliers.pdf')
 
-plt.figure()
-plt.plot(t_axis, history['cee_x_history'] / np.arange(1, len(history['cee_x_history']) + 1, 1), 'r')
-plt.plot(t_axis, history['cee_xres_history'] / np.arange(1, len(history['cee_xres_history']) + 1, 1), 'k')
-plt.plot(t_axis, history['cee_xres_stat_history'] / np.arange(1, len(history['cee_xres_stat_history']) + 1, 1), 'b')
 
-plt.figure()
+plt.figure(figsize=[15/2.54, 10/2.54])
+plt.plot(t_axis, history['cee_x_history'] / np.arange(1, len(history['cee_x_history']) + 1, 1), 'm', label='$\mathrm{CEE}_{Kalman}$')
+plt.plot(t_axis, history['cee_xres_history'] / np.arange(1, len(history['cee_xres_history']) + 1, 1), 'r', label='$\mathrm{CEE}_{robust\ Kalman}$')
+if PLOT_ADAPTIVE_CEE:
+    plt.plot(t_axis, history['cee_xres_stat_history'] / np.arange(1, len(history['cee_xres_stat_history']) + 1, 1), 'b', label='$\mathrm{CEE}_{robust\ adaptive\ Kalman}$')
+plt.xlabel(r'$t [\mathrm{s}]$')
+plt.ylabel(r'$\mathrm{CEE}$')
+plt.axis('tight')
+ax = plt.gca()
+ax.spines['right'].set_color('none')
+ax.spines['top'].set_color('none')
+ax.xaxis.set_ticks_position('bottom')
+ax.yaxis.set_ticks_position('left')
+plt.legend()
+if IS_SPIKE_EXPERIMENT:
+    plt.savefig('cee_spike_outliers.pdf')
+else:
+    plt.savefig('cee_normal_outliers.pdf')
+
+
+plt.figure(figsize=[15/2.54, 10/2.54])
 plt.plot(t_axis, [k[0, 0] for k in history['inov']], 'k')
 plt.title('inovation')
 
-plt.figure()
-plt.plot(t_axis, history['wstat_r_mean'], 'k')
-plt.plot(t_axis, history['r_mean_est'], 'b', label='z0')
-plt.title('wstat_r_mean')
+plt.figure(figsize=[15/2.54, 10/2.54])
+plt.plot(t_axis, history['wstat_r_mean'], 'k', label=r'$\mathrm{E}\left\{r_{windowed}\right\}$')
+plt.plot(t_axis, history['r_mean_est'], 'b', label=r'$\mathrm{E}\left\{\hat{r}_{est}\right\}$')
+plt.xlabel(r'$t [\mathrm{s}]$')
+plt.ylabel(r'$\mathrm{E}\left\{r\right\} [\mathrm{m}]$')
+plt.axis('tight')
+ax = plt.gca()
+ax.spines['right'].set_color('none')
+ax.spines['top'].set_color('none')
+ax.xaxis.set_ticks_position('bottom')
+ax.yaxis.set_ticks_position('left')
+plt.legend()
+if IS_SPIKE_EXPERIMENT:
+    plt.savefig('r_mean_spike_outliers.pdf')
+else:
+    plt.savefig('r_mean_normal_outliers.pdf')
 
-plt.figure()
-plt.plot(t_axis, history['wstat_r_var'], 'k')
-plt.plot(t_axis, history['r_var_est'], 'b', label='z0')
-plt.title('wstat_r_mean')
+plt.figure(figsize=[15/2.54, 10/2.54])
+plt.plot(t_axis, history['wstat_r_var'], 'k', label=r'$\mathrm{Var}\left\{r_{windowed}\right\}$')
+plt.plot(t_axis, history['r_var_est'], 'b', label=r'$\mathrm{Var}\left\{\hat{r}_{est}\right\}$')
+plt.xlabel(r'$t [\mathrm{s}]$')
+plt.ylabel(r'$\mathrm{Var}\left\{r\right\} [\mathrm{m^2}]$')
+plt.axis('tight')
+ax = plt.gca()
+ax.spines['right'].set_color('none')
+ax.spines['top'].set_color('none')
+ax.xaxis.set_ticks_position('bottom')
+ax.yaxis.set_ticks_position('left')
+plt.legend()
+if IS_SPIKE_EXPERIMENT:
+    plt.savefig('r_variance_spike_outliers.pdf')
+else:
+    plt.savefig('r_variance_normal_outliers.pdf')
 
 plt.show()
