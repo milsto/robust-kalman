@@ -18,7 +18,7 @@ class HuberScore:
 
 
 class RobustKalman():
-    def __init__(self, F, B, H, x0, P0, Q0, R0, use_robust_estimation=False):
+    def __init__(self, F, B, H, x0, P0, Q0, R0, use_robust_estimation=False, use_robust_statistics=False, G=None):
         """
 
         Args:
@@ -30,15 +30,22 @@ class RobustKalman():
             Q0: (Initial) state noise covariance
             R0: (Initial) observation noise covariance
         """
-        self.F = F
-        self.B = B
-        self.H = H
-        self.x = x0
-        self.P = P0
-        self.Q = Q0
-        self.R = R0
+        self.F = F.copy()
+        self.B = B.copy()
+        self.H = H.copy()
+        self.x = x0.copy()
+        self.P = P0.copy()
+        self.Q = Q0.copy()
+        self.R = R0.copy()
+
+        self.G = G.copy()
 
         self.use_robust_estimation = use_robust_estimation
+        self.use_robust_statistics = use_robust_statistics
+
+        self.history_inovation = list()
+        self.r_mean_est = 0.0
+        self.r_var_est = 0.0
 
         self.robust_score = HuberScore(delta=1.5)
 
@@ -96,10 +103,34 @@ class RobustKalman():
         # case it is an aproximation.
         self.P = self.P - np.matmul(np.matmul(K, self.H), self.P)
 
+        if self.use_robust_statistics:
+            assert self.R.shape == (1, 1), 'Current implementation for robust variance estimation tested only for ' \
+                                           'models with one observable.'
+            self.history_inovation.append(self.inovation)
+            if len(self.history_inovation) < 6:
+                self.r_mean_est = 0.0
+                self.r_var_est = self.R[0, 0]
+            else:
+                # Adaptive estimate of R
+                r_arr = np.array(self.history_inovation, dtype=np.float32)
+                d = np.median(np.fabs(r_arr - np.median(r_arr)) / 0.6745)
+
+                self.r_mean_est = minimize(lambda xx: self.m_estimate_r_criterion(xx, r_arr, d), self.history_inovation[-1], method='nelder-mead').x
+                self.r_var_est = d**2 - np.matmul(np.matmul(self.H, self.P), self.H.T)
+
+            self.R[0, 0] = self.r_var_est
+
     def m_estimate_criterion(self, x, Y, X):
         crit = 0.0
         for i in range(Y.shape[0]):
             crit += self.robust_score.evaluate(Y[i, :] - np.matmul(X[i, :], x))
             #crit += (Y[i, :] - np.matmul(X[i, :], x))**2
+
+        return crit
+
+    def m_estimate_r_criterion(self, x, r_est_arr, d):
+        crit = 0.0
+        for i in range(len(r_est_arr)):
+            crit += self.robust_score.evaluate((r_est_arr[i] - x) / d)
 
         return crit
