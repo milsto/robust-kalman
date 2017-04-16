@@ -10,8 +10,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
 
+import sys
+sys.path.insert(0, '..')
+
 from robust_kalman import RobustKalman
-from utils import HuberScore, VariablesHistory, WindowStatisticsEstimator
+from robust_kalman.utils import HuberScore, VariablesHistory, WindowStatisticsEstimator
 
 np.random.seed(256)
 

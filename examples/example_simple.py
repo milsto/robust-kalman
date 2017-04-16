@@ -8,8 +8,11 @@ Author: Milos Stojanovic (github: milsto)
 import numpy as np
 import matplotlib.pyplot as plt
 
+import sys
+sys.path.insert(0, '..')
+
 from robust_kalman import RobustKalman
-from utils import HuberScore, VariablesHistory, WindowStatisticsEstimator
+from robust_kalman.utils import HuberScore, VariablesHistory, WindowStatisticsEstimator
 
 # Define a linear state space model
 dt = 0.01

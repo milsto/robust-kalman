@@ -6,7 +6,7 @@ Author: Milos Stojanovic (github: milsto)
 
 import numpy as np
 from scipy.optimize import minimize
-from utils import HuberScore
+from .utils import HuberScore
 
 
 class RobustKalman():
