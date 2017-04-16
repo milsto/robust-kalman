@@ -1,7 +1,11 @@
+"""
+Utilities for robust Kalman implementation and testing.
+"""
 import numpy as np
 
 
 class HuberScore:
+    """Robust Huber score function."""
     def __init__(self, delta=1.5):
         self._delta = delta
 
@@ -16,6 +20,7 @@ class HuberScore:
 
 
 class VariablesHistory:
+    """Utility to easily track variable history for plotting."""
     def __init__(self):
         self._variables_history = dict()
 
@@ -30,6 +35,7 @@ class VariablesHistory:
 
 
 class WindowStatisticsEstimator:
+    """Windowed estimations of first and second moment of a random process."""
     def __init__(self, win_size=25):
         self._win_size = win_size
         self._buffer = np.zeros((self._win_size,), np.float32)

@@ -1,3 +1,11 @@
+"""
+Script to evaluate the robust and adaptive Kalman estimator.
+
+Primarily used for to make conclusions and plots for the paper written
+for Stochastic System Theory (MSc) course at University of Belgrade, School of Electrical Engineering.
+
+Author: Milos Stojanovic (github: milsto)
+"""
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib
@@ -51,15 +59,15 @@ sigma_measure = 0.1
 x0_kalman = np.array([[0, 0]], np.float32).T
 
 IS_SPIKE_EXPERIMENT = True
-PLOT_ADAPTIVE_CEE = False
+PLOT_ADAPTIVE_CEE = True
 
 
 Q0 = np.matmul(G, G.T) * sigma_process**2
 R0 = np.eye(1, dtype=np.float32) * sigma_measure**2
 
-kalman_linear = RobustKalman(F, None, H, x0_kalman, P0, Q0, R0, use_robust_estimation=False, G=G, use_robust_statistics=False)
-kalman_robust = RobustKalman(F, None, H, x0_kalman, P0, Q0, R0, use_robust_estimation=True, G=G, use_robust_statistics=False)
-kalman_robust_stat = RobustKalman(F, None, H, x0_kalman, P0, Q0, R0, use_robust_estimation=True, G=G, use_robust_statistics=True)
+kalman_linear = RobustKalman(F, None, H, x0_kalman, P0, Q0, R0, use_robust_estimation=False, use_adaptive_statistics=False)
+kalman_robust = RobustKalman(F, None, H, x0_kalman, P0, Q0, R0, use_robust_estimation=True, use_adaptive_statistics=False)
+kalman_robust_stat = RobustKalman(F, None, H, x0_kalman, P0, Q0, R0, use_robust_estimation=True, use_adaptive_statistics=True)
 
 wstat_q = WindowStatisticsEstimator(win_size=25)
 wstat_r = WindowStatisticsEstimator(win_size=25)
@@ -78,12 +86,12 @@ history = VariablesHistory()
 for t in t_axis:
     history.update('x', x)
     history.update('z', z)
-    history.update('x_kalman', kalman_linear.x)
-    history.update('x_kalman_robust', kalman_robust.x)
-    history.update('x_kalman_robust_stat', kalman_robust_stat.x)
-    cee_x += (np.linalg.norm(kalman_linear.x - x) / (np.linalg.norm(x) + 0.0001)) / step
-    cee_xres += (np.linalg.norm(kalman_robust.x - x) / (np.linalg.norm(x) + 0.0001)) / step
-    cee_xres_stat += (np.linalg.norm(kalman_robust_stat.x - x) / (np.linalg.norm(x) + 0.0001)) / step
+    history.update('x_kalman', kalman_linear.current_estimate)
+    history.update('x_kalman_robust', kalman_robust.current_estimate)
+    history.update('x_kalman_robust_stat', kalman_robust_stat.current_estimate)
+    cee_x += (np.linalg.norm(kalman_linear.current_estimate - x) / (np.linalg.norm(x) + 0.0001)) / step
+    cee_xres += (np.linalg.norm(kalman_robust.current_estimate - x) / (np.linalg.norm(x) + 0.0001)) / step
+    cee_xres_stat += (np.linalg.norm(kalman_robust_stat.current_estimate - x) / (np.linalg.norm(x) + 0.0001)) / step
     history.update('cee_x_history', cee_x)
     history.update('cee_xres_history', cee_xres)
     history.update('cee_xres_stat_history', cee_xres_stat)
@@ -113,7 +121,7 @@ for t in t_axis:
     kalman_robust_stat.time_update()
     kalman_robust_stat.measurement_update(z)
 
-    history.update('inov', kalman_robust.inovation)
+    history.update('inov', kalman_robust.current_inovation)
 
     step += 1
 
@@ -121,7 +129,7 @@ plt.figure(figsize=[15/2.54, 10/2.54])
 plt.plot(t_axis, [x[0, 0] for x in history['x']], 'g', label='$x_0\ (true\ state)$')
 plt.plot(t_axis, [z[0, 0] for z in history['z']], 'b', linewidth=0.5, label='$z_0\ (measurement)$')
 plt.plot(t_axis, [k[0, 0] for k in history['x_kalman']], 'm', label='$\hat{x}^{Kalman}_0$')
-plt.plot(t_axis, [k[0, 0] for k in history['x_kalman_robust']], 'r', label='$\hat{x}^{robust\ Kalman}_0$')
+plt.plot(t_axis, [k[0, 0] for k in history['x_kalman_robust']], 'r', label=r'$\hat{x}^\mathbf{robust\ Kalman}_0$')
 plt.xlabel(r'$t [\mathrm{s}]$')
 plt.ylabel(r'$x_0 [\mathrm{m}]$')
 plt.axis('tight')
